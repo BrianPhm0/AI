@@ -49,11 +49,11 @@ def serve_frontend():
     return FileResponse("static/index.html")
 
 # Đọc dữ liệu từ file CSV
-FILE_PATH = "restaurants.csv"
+FILE_PATH = "sorted_restaurants.csv"
 try:
     df = pd.read_csv(FILE_PATH)
     # Chỉ lấy các cột cần thiết và đổi tên nếu cần
-    df = df[['name','address', 'cuisines', 'avgRating', 'priceRange', 'timeOpen']].dropna()
+    df = df[['name','address', 'cuisines', 'Final_Score_Normalized', 'priceRange', 'timeOpen']].dropna()
 
 except FileNotFoundError:
     raise FileNotFoundError(f"Không tìm thấy file dữ liệu: {FILE_PATH}")
@@ -61,47 +61,47 @@ except KeyError as e:
     raise KeyError(f"Các cột bị thiếu trong CSV: {e}")
 
 @app.get("/chatbot")
-def chatbot(query: str = Query(..., description="Câu hỏi về nhà hàng")):
-    """Chatbot tư vấn nhà hàng"""
+def chatbot(query: str = Query(..., description="Câu hỏi về nhà hàng hoặc ẩm thực")):
+    """Chatbot tư vấn nhà hàng và đưa ra gợi ý khác nếu không phù hợp."""
     if not query:
         raise HTTPException(status_code=400, detail="Câu hỏi không được để trống.")
-    
-    # Tạo danh sách nhà hàng dạng Markdown
-    restaurant_list = "\n".join(
-    [
-        f"<strong>{row['name']}</strong>\n"
-        f"🏠 Địa chỉ: {row['address']}\n"
-        f"🍽️ Ẩm thực: {row['cuisines']}\n"
-        f"⭐ Đánh giá: {row['avgRating']}/5\n"
-        f"💰 Mức giá: {row['priceRange']}\n"
-        f"🕒 Giờ mở cửa: {row['timeOpen']}\n"
-        for _, row in df.iterrows()
-    ]
-)
 
-    
+    # Lọc các nhà hàng có thông tin đầy đủ
+    filtered_df = df.dropna(subset=['name', 'address', 'cuisines', 'Final_Score_Normalized', 'priceRange', 'timeOpen'])
+
+    # Tạo danh sách nhà hàng dạng Markdown
+    restaurant_list = "\n\n".join(
+        [
+            f"<strong>{row['name']}</strong>\n"
+            f"🏠 Địa chỉ: {row['address']}\n"
+            f"🍽️ Ẩm thực: {row['cuisines']}\n"
+            f"⭐ Đánh giá: {row['Final_Score_Normalized']}/10\n"
+            f"💰 Mức giá: {row['priceRange']}\n"
+            f"🕒 Giờ mở cửa: {row['timeOpen']}\n"
+            for _, row in filtered_df.iterrows()
+        ]
+    )
+
     # Tạo lời nhắc cho chatbot
     prompt = f"""
-    Bạn là một chatbot tư vấn nhà hàng cho người dùng trên website 
+    Bạn là một chatbot tư vấn nhà hàng cho người dùng trên website.
     Người dùng hỏi: '{query}'
     
     Hãy trả lời câu hỏi của người dùng một cách rõ ràng và dễ hiểu.
-    với mỗi quán ăn, hãy chia thông tin ra từng dòng.
-    mỗi quán ăn sẽ được phân cách bằng dấu xuống dòng. 
-    Hãy lựa chọn những nhà hàng phù hợp nhất với câu hỏi của người dùng.
-    Nếu không tìm thấy nhà hàng phù hợp, hãy đưa ra những gợi ý ẩm thực khác.
-    Định dạng câu trả lời của bạn theo Markdown để dễ đọc.
+    Nếu không tìm thấy nhà hàng phù hợp, hãy đưa ra các gợi ý về món ăn hoặc hoạt động liên quan đến ẩm thực.
 
-    Dưới đây là các nhà hàng phù hợp với yêu cầu của bạn
+    Dưới đây là danh sách nhà hàng hiện có:
     {restaurant_list}
-    Nếu không tìm thấy nhà hàng phù hợp, hãy đưa ra lời gợi ý hợp lý.
-    """
 
+    Nếu không tìm thấy nhà hàng phù hợp, hãy đề xuất các ý tưởng hoặc món ăn mà người dùng có thể thích, dựa trên câu hỏi của họ.
+    Định dạng câu trả lời của bạn theo Markdown để dễ đọc.
+    """
 
     chat_session = model.start_chat(history=[])
     response = chat_session.send_message(prompt)
     
     return {"query": query, "response": response.text}
+
 
 # Chạy FastAPI trên VS Code
 if __name__ == "__main__":
