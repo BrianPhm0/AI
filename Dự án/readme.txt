@@ -1,3 +1,16 @@
+
+
+Vào terminal của Dự án, chạy lệnh uvicorn chatbotandrecommend:app --host 127.0.0.1 --port 8000 --reload
+
+
+
+
+Khi call recommendations, nên cung cấp tung độ, hoành độ cho user
+
+
+
+//Sau đó dùng node js để call api
+
 npm install axios
 
 const axios = require('axios');
@@ -28,6 +41,9 @@ getChatbotResponse('Tìm nhà hàng Ý', 21.0285, 105.8542);
 const axios = require('axios');
 
 // Gửi yêu cầu tới API FastAPI để nhận gợi ý nhà hàng
+
+Khi call recommendations, nên cung cấp tung độ, hoành độ cho user
+
 async function getRecommendations(userId, currentRestaurantId, topN, userLat, userLon) {
   try {
     const response = await axios.get('http://127.0.0.1:8000/recommendations', {

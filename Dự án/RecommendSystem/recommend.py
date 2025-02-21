@@ -10,8 +10,8 @@ app = FastAPI()
 
 # Đọc dữ liệu từ file
 def load_data():
-    interactions_path = '/kaggle/input/item-meta/interactions.csv'
-    item_meta_path = '/kaggle/input/item-meup/item-meta-updated.csv'
+    interactions_path = 'interactions.csv'
+    item_meta_path = 'item-meta-updated.csv'
     interactions_df = pd.read_csv(interactions_path)
     item_meta_df = pd.read_csv(item_meta_path)
 
