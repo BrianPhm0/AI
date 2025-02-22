@@ -94,7 +94,10 @@ def chatbot(
     if user_lat is not None and user_lon is not None:
         # Tính khoảng cách giữa nhà hàng và người dùng
         for restaurant in restaurant_list:
-            restaurant["distance"] = calculate_distance(user_lat, user_lon, restaurant["latitude"], restaurant["longitude"])
+            rest_lat = float(restaurant.get("latitude", 0) or 0)
+            rest_lon = float(restaurant.get("longitude", 0) or 0)
+
+            restaurant["distance"] = calculate_distance(user_lat, user_lon, rest_lat, rest_lon)
         
         # Sắp xếp danh sách nhà hàng theo khoảng cách (từ gần đến xa)
         restaurant_list = sorted(restaurant_list, key=lambda x: x["distance"])
