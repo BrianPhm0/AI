@@ -48,7 +48,7 @@ app.add_middleware(
 FILE_PATH = "item-meta-updated.csv"
 try:
     df = pd.read_csv(FILE_PATH)
-    df = df[['name','address', 'cuisines', 'average_score', 'priceRange', 'timeOpen', 'latitude', 'longitude']].dropna()
+    df = df[['_id', 'image', 'name','address', 'cuisines', 'average_score', 'priceRange', 'timeOpen', 'latitude', 'longitude']].dropna()
 except FileNotFoundError:
     raise FileNotFoundError(f"Không tìm thấy file dữ liệu: {FILE_PATH}")
 except KeyError as e:
@@ -70,7 +70,10 @@ def chatbot(
         raise HTTPException(status_code=400, detail="Câu hỏi không được để trống.")
 
     # Lọc các nhà hàng có thông tin đầy đủ
-    filtered_df = df.dropna(subset=['name', 'address', 'cuisines', 'average_score', 'priceRange', 'timeOpen'])
+    print(df.columns.tolist())  # In ra danh sách tên cột có trong DataFrame
+
+
+    filtered_df = df.dropna(subset=['_id', 'image' ,'name', 'address', 'cuisines', 'average_score', 'priceRange', 'timeOpen'])
 
     # Tạo danh sách nhà hàng
     restaurant_list = [
@@ -164,19 +167,26 @@ def get_top_similar_restaurants(restaurant_id: str, content_similarity_df, inter
     return similar_restaurants.index.tolist()
 
 def recommend_for_user(user_id: str, current_restaurant_id: str, interaction_matrix, content_similarity_df, interaction_similarity_df, item_meta_df, top_n: int = 5, user_lat=None, user_lon=None) -> List[str]:
+    # Kiểm tra nếu người dùng không có trong interaction matrix, thì dựa vào sự tương đồng giữa các nhà hàng
     if user_id not in interaction_matrix.index:
-        return []
+        # Nếu không có người dùng trong dữ liệu, sử dụng sự tương tự giữa các nhà hàng
+        recommended_restaurants = get_top_similar_restaurants(current_restaurant_id, content_similarity_df, interaction_similarity_df, item_meta_df, top_n, user_lat, user_lon)
+        return recommended_restaurants
     
+    # Nếu người dùng có trong dữ liệu, tiếp tục dựa vào thông tin tương tác của người dùng
     user_items = interaction_matrix.loc[user_id]
     interacted_restaurants = user_items[user_items > 0].index.tolist()
     recommended_restaurants = set()
-    
+
+    # Thêm nhà hàng tương tự từ nhà hàng hiện tại
     recommended_restaurants.update(get_top_similar_restaurants(current_restaurant_id, content_similarity_df, interaction_similarity_df, item_meta_df, top_n, user_lat, user_lon))
-    
+
+    # Thêm nhà hàng tương tự từ các nhà hàng mà người dùng đã tương tác
     for restaurant in interacted_restaurants:
         recommended_restaurants.update(get_top_similar_restaurants(restaurant, content_similarity_df, interaction_similarity_df, item_meta_df, top_n, user_lat, user_lon))
-    
+
     return list(recommended_restaurants)[:top_n]
+
 
 def get_restaurant_details(restaurant_ids: List[str], item_meta_df):
     return item_meta_df[item_meta_df['_id'].isin(restaurant_ids)][['_id', 'name', 'cuisines', 'address', 'average_score', 'latitude', 'longitude']]
