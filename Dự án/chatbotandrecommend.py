@@ -188,8 +188,11 @@ def recommend_for_user(user_id: str, current_restaurant_id: str, interaction_mat
     return list(recommended_restaurants)[:top_n]
 
 
+# Lấy thông tin chi tiết các nhà hàng
 def get_restaurant_details(restaurant_ids: List[str], item_meta_df):
-    return item_meta_df[item_meta_df['_id'].isin(restaurant_ids)][['_id', 'name', 'cuisines', 'address', 'average_score', 'latitude', 'longitude']]
+    """Lấy thông tin chi tiết của các nhà hàng từ danh sách ID."""
+    return item_meta_df[item_meta_df['_id'].isin(restaurant_ids)][['_id','image', 'name', 'cuisines', 'address', 'average_score', 'priceRange', 'timeOpen', 'latitude', 'longitude']]
+
 
 # API Endpoint để gợi ý nhà hàng cho người dùng
 @app.get("/recommendations")
