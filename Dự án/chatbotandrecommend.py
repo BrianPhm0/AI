@@ -74,7 +74,9 @@ def chatbot(
 
     # Tạo danh sách nhà hàng
     restaurant_list = [
-        {
+        {   
+            "_id": row['_id'],
+            "image": row['image'],
             "name": row['name'],
             "address": row['address'],
             "cuisines": row['cuisines'],
